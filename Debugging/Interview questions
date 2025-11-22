@@ -1,4 +1,23 @@
 1) "How do you monitor and troubleshoot AKS clusters? What tools do you use and what kinds of issues have you resolved?"
+
+"To monitor and troubleshoot AKS clusters, we primarily use Azure Monitor, Application Insights, and kubectl commands.
+
+When an issue occurs, we start by checking pod health, CPU/memory usage, and restarts using:
+
+kubectl get pods
+kubectl describe pod <pod-name>
+kubectl top pod <pod-name>
+kubectl logs <pod-name>
+
+
+This helps us determine whether the issue is with the app, the container, or the cluster resource limits.
+
+On the application side, we use Application Insights to track exceptions, response times, and failures. For example, the Transaction Search 
+feature helps us trace failed requests and identify root causes from telemetry.
+
+In one case, an API deployed to AKS was repeatedly restarting. Using kubectl logs, I identified out-of-memory errors, and with Azure Monitor, 
+I noticed the pod was breaching its memory limit. We resolved it by increasing the pod memory in the Helm values file and redeploying."
+
 1️⃣ How I monitor AKS day-to-day
 
 Foundation setup
