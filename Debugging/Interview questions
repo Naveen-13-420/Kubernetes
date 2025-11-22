@@ -1,1 +1,239 @@
-1)
+1) "How do you monitor and troubleshoot AKS clusters? What tools do you use and what kinds of issues have you resolved?"
+1️⃣ How I monitor AKS day-to-day
+
+Foundation setup
+
+Azure Monitor + Container Insights
+
+Enable diagnostics on the AKS cluster and send them to Log Analytics.
+
+Turn on Container Insights for:
+
+Node & pod CPU/memory
+
+Node disk & filesystem
+
+Controller status (deployments, DaemonSets, jobs)
+
+Kube events
+
+Application Insights
+
+For HTTP APIs and web apps running on AKS:
+
+Track request rate, latency, failures, dependencies (DB, Redis, etc.).
+
+Correlate App Insights traces with pod name / container ID from logs.
+
+Metrics & alerts
+
+Create Azure Monitor alerts on:
+
+Cluster level: node CPU/memory > threshold, disk pressure, “node not ready”.
+
+Workload level: pod restarts, pod not ready, HPA not scaling, 5xx rate from ingress.
+
+App level: request failure % and p95 latency from App Insights.
+
+Alerts go to email / Teams channel via action groups.
+
+Logging
+
+All AKS logs → Log Analytics Workspace (kube events, container logs, controller logs).
+
+Use Kusto queries to filter for:
+
+specific namespaces
+
+error messages or correlation IDs
+
+repeated CrashLoopBackOff / ImagePullBackOff issues
+
+2️⃣ Tools I use for troubleshooting
+
+Azure side
+
+Azure Portal
+
+AKS resource health, node pool status, upgrade status.
+
+Metrics Explorer for quick checks (CPU, memory, node count, HPA metrics).
+
+Azure Monitor / Log Analytics
+
+Kusto queries on:
+
+KubePodInventory, KubeNodeInventory, KubeEvents, ContainerLog
+
+Dashboards to see:
+
+Top pods by CPU/memory
+
+Pods frequently restarting
+
+Error logs aggregated by namespace/service
+
+Network tools
+
+Network Watcher / Connection Monitor for connectivity checks.
+
+NSG / UDR review when traffic isn’t flowing as expected.
+
+Kubernetes side
+
+kubectl get/describe for:
+
+nodes, pods, deployments, replicasets, services, ingress, events
+
+kubectl logs and kubectl logs -f for live debugging.
+
+kubectl top nodes/pods once metrics-server is enabled.
+
+Occasionally kubectl exec into a pod to:
+
+run DNS tests (nslookup, dig)
+
+curl internal service endpoints
+
+Helm (in your case): helm history, helm status, helm rollback for deployment issues.
+
+3️⃣ Types of issues I’ve actually resolved
+
+I’d pick 2–3 examples in the interview; here are ones that match your experience.
+
+✅ Example 1: High CPU & pod evictions on AKS
+
+Symptoms
+
+Alerts from Azure Monitor: node CPU > 80–90% and pod evictions.
+
+Users reported slowness and occasional 5xx from the application.
+
+Steps I took
+
+Checked Azure Monitor → Container Insights:
+
+Confirmed CPU saturation on specific nodes.
+
+Saw that pods from a particular namespace were the top CPU consumers.
+
+Ran:
+
+kubectl top nodes
+kubectl top pods -n <namespace>
+kubectl describe pod <name> -n <namespace>
+
+
+Found pods getting evicted due to resource pressure.
+
+Noticed many containers had no proper requests/limits or very low requests.
+
+Checked HPA configuration:
+
+HPA was configured on CPU but the pods didn’t have realistic requests, so scaling was not behaving correctly.
+
+Fix:
+
+Updated resource requests/limits based on actual usage from metrics.
+
+Tuned HPA threshold and min/max replicas.
+
+For long-term, scaled the node pool and separated batch workloads into a different pool.
+
+Result
+
+CPU pressure reduced.
+
+Evictions stopped.
+
+Application response time became stable.
+
+✅ Example 2: ImagePullBackOff from ACR
+
+Symptoms
+
+New AKS deployment failed with ImagePullBackOff.
+
+kubectl describe pod showed errors pulling image from Azure Container Registry.
+
+Steps I took
+
+Checked pod events:
+
+kubectl describe pod <pod> -n <namespace>
+
+
+Error clearly said unauthorized or failed to pull image.
+
+Validated AKS → ACR authentication:
+
+Confirmed if the cluster was using Managed Identity or service principal.
+
+Checked role assignments on ACR.
+
+Fix:
+
+Gave the AKS managed identity AcrPull role on ACR.
+
+Verified image name / tag in Deployment YAML (sometimes tag mismatch was the root cause).
+
+Did a rollout restart:
+
+kubectl rollout restart deployment <deployment> -n <namespace>
+
+
+Result
+
+Pods started successfully once permissions and tag were corrected.
+
+✅ Example 3: DNS resolution / service connectivity issues
+
+Symptoms
+
+Application intermittent failures; logs showing DNS or connection timeouts.
+
+Some services could not reach other internal services.
+
+Steps I took
+
+Checked CoreDNS:
+
+kubectl get pods -n kube-system -l k8s-app=kube-dns
+kubectl logs -n kube-system <coredns-pod>
+
+
+Verified pods were running and not throttled.
+
+Used a debug pod:
+
+kubectl run dnsutils --image=busybox:1.28 -it --restart=Never -- nslookup <service>.<namespace>.svc.cluster.local
+
+
+Tested DNS resolution and connectivity.
+
+Reviewed:
+
+Network Policies, NSGs, and UDRs for blocked traffic.
+
+Any recent changes in VNET / DNS server configuration (if using custom DNS).
+
+Fix:
+
+Adjusted DNS settings / CoreDNS resource limits if it was being throttled.
+
+Fixed incorrect service names or ports in application config.
+
+Corrected any restrictive NetworkPolicies blocking pod-to-pod communication.
+
+Result
+
+DNS lookups became stable, and the intermittent failures stopped.
+
+4️⃣ How I’d summarize in an interview
+
+You can close with something like:
+
+“Overall, I treat AKS monitoring as a combination of Azure Monitor + App Insights + Log Analytics on the Azure side, and kubectl/Helm and proper resource 
+configuration on the Kubernetes side. I’ve handled issues like high CPU and pod evictions, ImagePullBackOff from ACR, DNS and connectivity issues inside the 
+cluster, and misconfigured probes causing CrashLoopBackOff. I always start from metrics and logs, narrow down whether the problem is at cluster, node, pod, or 
+app level, and then fix configuration or capacity accordingly.”
