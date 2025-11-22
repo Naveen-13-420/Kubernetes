@@ -1,0 +1,24 @@
+                   ┌──────────────────────────┐
+                   │     End Users / Clients  │
+                   └────────────┬─────────────┘
+                                │
+                     🌐 Azure Front Door (AFD)
+                     - Ingress traffic
+                     - WAF enabled
+                     - Global load balancing
+                     - HTTPS with TLS certs
+                                │
+                  ┌────────────▼────────────┐
+                  │   Private Endpoint      │ ◀── Secured via Azure Private Link
+                  └────────────┬────────────┘
+                                │
+                 🔷 Azure Kubernetes Service (AKS)
+                 - Node pools
+                 - Deployments via Helm
+                 - Services exposed via Internal Load Balancer
+                                │
+         ┌──────────────────────┼──────────────────────┐
+         │                      │                      │
+     🔐 Key Vault         📈 App Insights          📊 Log Analytics
+     - Secrets            - App monitoring         - Logs & metrics
+     - ADO integration    - Exceptions, failures   - Alert rules + Teams webhook
