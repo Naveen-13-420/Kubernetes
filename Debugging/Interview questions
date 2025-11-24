@@ -256,3 +256,154 @@ You can close with something like:
 configuration on the Kubernetes side. I’ve handled issues like high CPU and pod evictions, ImagePullBackOff from ACR, DNS and connectivity issues inside the 
 cluster, and misconfigured probes causing CrashLoopBackOff. I always start from metrics and logs, narrow down whether the problem is at cluster, node, pod, or 
 app level, and then fix configuration or capacity accordingly.”
+
+Q) Steps to take if kubelet goes down on a Kubernetes worker node
+1️⃣ Check the node status
+First verify the node state:
+
+kubectl get nodes
+
+
+If kubelet is down, the node will show:
+
+NotReady
+
+Unknown
+
+2️⃣ SSH into the node
+
+Log in to the node:
+
+ssh <node-ip-or-name>
+
+3️⃣ Check kubelet service status
+
+On the node:
+
+sudo systemctl status kubelet
+
+
+You may see:
+
+inactive
+
+failed
+
+crash loop
+
+not running
+
+4️⃣ Restart the kubelet service
+sudo systemctl restart kubelet
+
+
+Then verify:
+
+sudo systemctl status kubelet
+
+5️⃣ Check kubelet logs to find the root cause
+sudo journalctl -u kubelet -f
+
+
+Look for:
+
+certificate errors
+
+config file issues
+
+CNI/network plugin errors
+
+container runtime failures (containerd/Docker)
+
+6️⃣ Check container runtime (containerd or Docker)
+
+Because kubelet depends on it:
+
+containerd:
+
+sudo systemctl status containerd
+sudo systemctl restart containerd
+
+
+Docker:
+
+sudo systemctl status docker
+sudo systemctl restart docker
+
+
+If the runtime is down → kubelet won’t work.
+
+7️⃣ Check disk pressure / memory pressure
+
+Kubelet may stop if node resources are exhausted.
+
+Check disk:
+
+df -h
+
+
+Check memory:
+
+free -m
+
+
+If disk is full → clean logs:
+
+sudo rm -rf /var/log/*-???????? /var/log/*.gz
+sudo journalctl --vacuum-size=200M
+
+8️⃣ Check kubelet config files
+
+Configuration issues cause kubelet to fail.
+
+Check:
+
+/var/lib/kubelet/config.yaml
+/etc/kubernetes/kubelet.conf
+/etc/kubernetes/manifests/
+
+
+Validate syntax if modified.
+
+9️⃣ Check CNI plugin status
+
+CNI issues also stop kubelet.
+
+Check CNI directory:
+
+ls -l /etc/cni/net.d/
+
+
+Check CNI logs:
+
+journalctl -u kubelet | grep CNI
+
+🔟 If unable to recover — drain the node
+
+If kubelet cannot be fixed quickly, move workloads safely:
+
+On the master:
+
+kubectl drain <node-name> --ignore-daemonsets --delete-emptydir-data
+
+
+This reschedules workloads to healthy nodes.
+
+1️⃣1️⃣ Remove and rejoin the node (if needed)
+
+If kubelet or the node is corrupted:
+
+Remove the node:
+
+kubectl delete node <node-name>
+
+
+Rejoin using your cluster’s join command:
+
+kubeadm join ...
+
+⭐ Interview-ready summary
+
+If kubelet goes down, the node becomes NotReady, but pods continue running unmanaged.
+I first check kubelet service, restart it, and review logs to identify root cause (runtime issues, disk pressure, CNI issues, certificate errors).
+If the node can’t be recovered quickly, I drain it to reschedule workloads safely, then fix or rejoin the node.
