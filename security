@@ -79,3 +79,16 @@ uses to prove its identity to the API server. Permissions for a ServiceAccount a
 access it needs.
 
 In simple terms, a ServiceAccount is a machine identity for Pods, allowing them to interact with Kubernetes in a controlled and secure way.
+
+
+Q. How does Kubernetes ensure desired state?
+Kubernetes ensures the desired state by continuously monitoring the cluster and automatically correcting any differences between 
+the desired state (what you define in YAML files) and the current state (what is actually running). You declare what you want, such as the 
+number of Pods or their configuration, and Kubernetes takes responsibility for making it happen.
+
+This is done using controllers like the Deployment controller, ReplicaSet controller, and Node controller. These controllers constantly 
+watch the cluster through the API server. If a Pod crashes, a node goes down, or the number of running Pods changes, the controllers detect 
+the mismatch and take action to restore the desired state.
+
+In simple terms, Kubernetes works like an auto-correct system: you define the target state once, and Kubernetes keeps adjusting the system 
+automatically to match it.
