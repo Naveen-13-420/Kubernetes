@@ -37,3 +37,14 @@ using privileged mode. It works at the namespace level and enforces predefined s
 
 Azure Key Vault provides stronger security and centralized management for secrets, keys, and certificates. Even when using Key Vault, Kubernetes still stores internal data and references in etcd, so 
 etcd encryption is still important. Using Key Vault along with Kubernetes security features is a best practice.
+
+
+Final Tip (Easy to Remember)
+
+ConfigMap → non-sensitive config
+
+Secret → sensitive data (encoded, not encrypted)
+
+etcd encryption → protects cluster data
+
+Pod Security Admission → blocks insecure Pods
