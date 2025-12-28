@@ -48,3 +48,24 @@ Secret → sensitive data (encoded, not encrypted)
 etcd encryption → protects cluster data
 
 Pod Security Admission → blocks insecure Pods
+
+Q. Why should pods not run as root?
+Pods should not run as root because running containers with root privileges creates serious security risks. If an attacker compromises an application running as root inside a Pod, 
+they can gain full control over the container and potentially exploit container or kernel vulnerabilities to escape the container and affect the host node. This significantly increases the 
+impact of a security breach.
+
+Running Pods as root also violates the principle of least privilege. Most applications do not need root access to function, and granting unnecessary privileges makes it easier for misconfigurations 
+or bugs to be exploited. By running containers as a non-root user, Kubernetes limits what an application can do, reducing the damage even if the application is compromised.
+
+In simple terms, running a Pod as root is like giving administrator access to every application. Running as a non-root user adds an extra safety layer that helps protect the node, other Pods, and 
+the entire cluster.
+
+Q. How do you restrict API server access?
+API server access is restricted to ensure that only authorized users, applications, and systems can communicate with the Kubernetes control plane. Since the API server is the entry point to the cluster, 
+securing it is critical.
+
+Access is first restricted through authentication, where users and services must prove their identity using methods such as certificates, tokens, or an external identity provider like Azure Entra ID. 
+Once authenticated, authorization is enforced using RBAC, which ensures that users and service accounts only have the permissions they actually need, following the principle of least privilege.
+
+Network-level restrictions further protect the API server by limiting who can reach it over the network. This is commonly done by allowing access only from trusted IP ranges, using private endpoints, 
+or placing the API server behind firewalls or security groups. Audit logging is also enabled to track and review all API access, helping detect and investigate unauthorized or suspicious activity.
