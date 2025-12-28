@@ -1,0 +1,13 @@
+What is Pod Security Admission?
+
+Pod Security Admission is a built-in Kubernetes security mechanism that controls whether a Pod is allowed to run based on how securely it is configured. When a Pod is created or updated, 
+Kubernetes checks the Pod specification against predefined security standards and decides to allow, warn, or block the Pod. This helps prevent insecure workloads, such as Pods running in 
+privileged mode, accessing host resources, or running as the root user, from being deployed into the cluster.
+
+Pod Security Admission works at the namespace level and is configured using labels that define the required security level. Kubernetes provides three standard levels: Privileged, which allows 
+unrestricted access and is mainly used for system components; Baseline, which blocks clearly dangerous configurations while allowing most common workloads; and Restricted, which enforces strong 
+security practices such as running containers as non-root, disabling privilege escalation, and limiting access to the host. These levels can be applied in different modes such as enforce (block non-compliant Pods), 
+warn (allow but show warnings), or audit (log violations).
+
+In simple terms, Pod Security Admission acts like a security gate that validates Pod security before it starts running. It replaces the older PodSecurityPolicy feature with a simpler and
+more consistent approach, helping teams improve cluster security by stopping unsafe Pods early, without relying on manual reviews or post-deployment fixes.
