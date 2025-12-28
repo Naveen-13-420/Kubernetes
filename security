@@ -69,3 +69,13 @@ Once authenticated, authorization is enforced using RBAC, which ensures that use
 
 Network-level restrictions further protect the API server by limiting who can reach it over the network. This is commonly done by allowing access only from trusted IP ranges, using private endpoints, 
 or placing the API server behind firewalls or security groups. Audit logging is also enabled to track and review all API access, helping detect and investigate unauthorized or suspicious activity.
+
+Q. What is a ServiceAccount?
+A ServiceAccount in Kubernetes is a special type of account used by applications and Pods, not by humans, to communicate with the Kubernetes API. 
+It provides an identity that allows workloads running inside the cluster to authenticate securely when they need to access Kubernetes resources.
+
+Each Pod runs using a ServiceAccount, either a default one or a custom one you create. The ServiceAccount is associated with a token that the Pod 
+uses to prove its identity to the API server. Permissions for a ServiceAccount are controlled using RBAC, which ensures the application only has the 
+access it needs.
+
+In simple terms, a ServiceAccount is a machine identity for Pods, allowing them to interact with Kubernetes in a controlled and secure way.
