@@ -1,41 +1,52 @@
 What is Pod Security Admission?
 
-Pod Security Admission is a built-in Kubernetes security mechanism that controls whether a Pod is allowed to run based on how securely it is configured. When a Pod is created or updated, 
-Kubernetes checks the Pod specification against predefined security standards and decides to allow, warn, or block the Pod. This helps prevent insecure workloads, such as Pods running in 
+Pod Security Admission is a built-in Kubernetes security mechanism that controls whether a Pod is allowed to run based on how securely it is configured. 
+When a Pod is created or updated, 
+Kubernetes checks the Pod specification against predefined security standards and decides to allow, warn, or block the Pod. This helps prevent insecure 
+workloads, such as Pods running in 
 privileged mode, accessing host resources, or running as the root user, from being deployed into the cluster.
 
-Pod Security Admission works at the namespace level and is configured using labels that define the required security level. Kubernetes provides three standard levels: Privileged, which allows 
-unrestricted access and is mainly used for system components; Baseline, which blocks clearly dangerous configurations while allowing most common workloads; and Restricted, which enforces strong 
-security practices such as running containers as non-root, disabling privilege escalation, and limiting access to the host. These levels can be applied in different modes such as enforce (block non-compliant Pods), 
+Pod Security Admission works at the namespace level and is configured using labels that define the required security level. Kubernetes provides three 
+standard levels: Privileged, which allows 
+unrestricted access and is mainly used for system components; Baseline, which blocks clearly dangerous configurations while allowing most common workloads; 
+and Restricted, which enforces strong 
+security practices such as running containers as non-root, disabling privilege escalation, and limiting access to the host. These levels can be applied in 
+different modes such as enforce (block non-compliant Pods), 
 warn (allow but show warnings), or audit (log violations).
 
-In simple terms, Pod Security Admission acts like a security gate that validates Pod security before it starts running. It replaces the older PodSecurityPolicy feature with a simpler and
+In simple terms, Pod Security Admission acts like a security gate that validates Pod security before it starts running. It replaces the older PodSecurityPolicy 
+feature with a simpler and
 more consistent approach, helping teams improve cluster security by stopping unsafe Pods early, without relying on manual reviews or post-deployment fixes.
 
 
 1. Why should etcd be encrypted?
 
-etcd stores all Kubernetes data, including secrets, configuration, and cluster information. Secrets in Kubernetes are only base64 encoded, not encrypted, so anyone who gets access to etcd files or 
+etcd stores all Kubernetes data, including secrets, configuration, and cluster information. Secrets in Kubernetes are only base64 encoded, not encrypted, so 
+anyone who gets access to etcd files or 
 backups can read them. Encrypting etcd protects this data if disks or backups are accessed and helps prevent data leakage.
 
 2. Why is encryption needed when Secrets are already encoded?
 
-Kubernetes Secrets are only base64 encoded, which is easy to decode and does not provide security. Encryption is needed to protect secret data so that even if someone accesses etcd storage or backups, 
+Kubernetes Secrets are only base64 encoded, which is easy to decode and does not provide security. Encryption is needed to protect secret data so that even 
+if someone accesses etcd storage or backups, 
 they cannot read the actual values without the encryption key.
 
 3. Difference between ConfigMap and Secret
 
-ConfigMaps are used to store non-sensitive configuration data such as environment names or application settings and are stored in plain text. Secrets are used to store sensitive data like passwords and 
+ConfigMaps are used to store non-sensitive configuration data such as environment names or application settings and are stored in plain text. Secrets are 
+used to store sensitive data like passwords and 
 tokens and are base64 encoded. Secrets are meant to be protected using RBAC and etcd encryption.
 
 4. What is Pod Security Admission?
 
-Pod Security Admission is a Kubernetes security feature that checks Pod configurations before they run and blocks insecure Pods. It helps prevent risky settings such as running containers as root or 
+Pod Security Admission is a Kubernetes security feature that checks Pod configurations before they run and blocks insecure Pods. It helps prevent risky 
+settings such as running containers as root or 
 using privileged mode. It works at the namespace level and enforces predefined security rules.
 
 5. Why use Azure Key Vault when Kubernetes has Secrets?
 
-Azure Key Vault provides stronger security and centralized management for secrets, keys, and certificates. Even when using Key Vault, Kubernetes still stores internal data and references in etcd, so 
+Azure Key Vault provides stronger security and centralized management for secrets, keys, and certificates. Even when using Key Vault, Kubernetes still stores 
+internal data and references in etcd, so 
 etcd encryption is still important. Using Key Vault along with Kubernetes security features is a best practice.
 
 
@@ -50,25 +61,35 @@ etcd encryption → protects cluster data
 Pod Security Admission → blocks insecure Pods
 
 Q. Why should pods not run as root?
-Pods should not run as root because running containers with root privileges creates serious security risks. If an attacker compromises an application running as root inside a Pod, 
-they can gain full control over the container and potentially exploit container or kernel vulnerabilities to escape the container and affect the host node. This significantly increases the 
+Pods should not run as root because running containers with root privileges creates serious security risks. If an attacker compromises an application running 
+as root inside a Pod, 
+they can gain full control over the container and potentially exploit container or kernel vulnerabilities to escape the container and affect the host node. 
+This significantly increases the 
 impact of a security breach.
 
-Running Pods as root also violates the principle of least privilege. Most applications do not need root access to function, and granting unnecessary privileges makes it easier for misconfigurations 
-or bugs to be exploited. By running containers as a non-root user, Kubernetes limits what an application can do, reducing the damage even if the application is compromised.
+Running Pods as root also violates the principle of least privilege. Most applications do not need root access to function, and granting unnecessary 
+privileges makes it easier for misconfigurations 
+or bugs to be exploited. By running containers as a non-root user, Kubernetes limits what an application can do, reducing the damage even if the 
+application is compromised.
 
-In simple terms, running a Pod as root is like giving administrator access to every application. Running as a non-root user adds an extra safety layer that helps protect the node, other Pods, and 
+In simple terms, running a Pod as root is like giving administrator access to every application. Running as a non-root user adds an extra safety 
+layer that helps protect the node, other Pods, and 
 the entire cluster.
 
 Q. How do you restrict API server access?
-API server access is restricted to ensure that only authorized users, applications, and systems can communicate with the Kubernetes control plane. Since the API server is the entry point to the cluster, 
+API server access is restricted to ensure that only authorized users, applications, and systems can communicate with the Kubernetes control plane. 
+Since the API server is the entry point to the cluster, 
 securing it is critical.
 
-Access is first restricted through authentication, where users and services must prove their identity using methods such as certificates, tokens, or an external identity provider like Azure Entra ID. 
-Once authenticated, authorization is enforced using RBAC, which ensures that users and service accounts only have the permissions they actually need, following the principle of least privilege.
+Access is first restricted through authentication, where users and services must prove their identity using methods such as certificates, tokens, 
+or an external identity provider like Azure Entra ID. 
+Once authenticated, authorization is enforced using RBAC, which ensures that users and service accounts only have the permissions they actually need, 
+following the principle of least privilege.
 
-Network-level restrictions further protect the API server by limiting who can reach it over the network. This is commonly done by allowing access only from trusted IP ranges, using private endpoints, 
-or placing the API server behind firewalls or security groups. Audit logging is also enabled to track and review all API access, helping detect and investigate unauthorized or suspicious activity.
+Network-level restrictions further protect the API server by limiting who can reach it over the network. This is commonly done by allowing access only 
+from trusted IP ranges, using private endpoints, 
+or placing the API server behind firewalls or security groups. Audit logging is also enabled to track and review all API access, helping detect and 
+investigate unauthorized or suspicious activity.
 
 Q. What is a ServiceAccount?
 A ServiceAccount in Kubernetes is a special type of account used by applications and Pods, not by humans, to communicate with the Kubernetes API. 
